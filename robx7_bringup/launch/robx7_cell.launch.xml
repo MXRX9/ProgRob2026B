@@ -1,47 +1,58 @@
 <launch>
+    <!-- Variante de clasificacion color (A) o shape (B) -->
+    <arg name="classify_by" default="color"/>
+    <!-- Respaldo si camera_info no llega-->
+    <arg name="fallback_hfov" default="0.0"/>
+
+    <!-- Celda de trabajo + camara virtual + puente a ROS 2 -->
     <let name="urdf_path" value="$(find-pkg-share robx7_description)/urdf/robx7.urdf.xacro"/>
     <let name="rviz_config_path" value="$(find-pkg-share robx7_description)/rviz/robx7_cell.rviz"/>
     <let name="world_path" value="$(find-pkg-share robx7_description)/worlds/robx7_cell.sdf"/>
 
+    <!-- Gazebo con nuestro mundo (incluye el sistema Sensors, necesario para la camara) -->
     <include file="$(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py">
         <arg name="gz_args" value="-r $(var world_path)"/>
     </include>
 
-    <node pkg="ros_gz_bridge" exec="parameter_bridge" name="cloc_bridge" 
-          output="screen" args="/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock">
-    </node>
+    <!-- Puente Gazebo -> ROS 2 reloj, imagen y camera_info -->
+    <node pkg="ros_gz_bridge" exec="parameter_bridge" name="clock_bridge" output="screen"
+          args="/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock"/>
 
-    <node pkg="ros_gz_bridge" exec="parameter_bridge" name="camera_bridge" 
-          output="screen" args="/camera@sensor_msgs/msg/Image[ignition.msgs.Image /camera/camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo">
+    <node pkg="ros_gz_bridge" exec="parameter_bridge" name="camera_bridge" output="screen"
+        args="/camera@sensor_msgs/msg/Image[ignition.msgs.Image /camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo">
         <remap from="/camera" to="/camera/image_raw"/>
+        <remap from="/camera_info" to="/camera/camera_info"/>
     </node>
 
+    <!-- use_gazebo:=true activa ros2_control (ign_ros2_control) y el sensor de la camara -->
     <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher">
         <param name="robot_description" value="$(command 'xacro $(var urdf_path) use_gazebo:=true')"/>
         <param name="use_sim_time" value="true"/>
     </node>
 
     <node pkg="ros_gz_sim" exec="create" name="spawn_robx7" output="screen"
-          args="-topic robot_description -name robx7">
-    </node>
+          args="-topic robot_description -name robx7"/>
 
     <node pkg="controller_manager" exec="spawner" name="joint_state_broadcaster_spawner" output="screen"
           args="joint_state_broadcaster --controller-manager /controller_manager --controller-manager-timeout 60.0"/>
-
     <node pkg="controller_manager" exec="spawner" name="brazo_position_controller_spawner" output="screen"
           args="brazo_position_controller --controller-manager /controller_manager --controller-manager-timeout 60.0"/>
-
     <node pkg="controller_manager" exec="spawner" name="gripper_position_controller_spawner" output="screen"
           args="gripper_position_controller --controller-manager /controller_manager --controller-manager-timeout 60.0"/>
 
+    <!-- Nodo de vision minimo de la sesion (anota la imagen y reporta FPS/intrinsecos) -->
     <node pkg="robx7_vision" exec="camera_viewer" name="camera_viewer" output="screen">
         <param name="use_sim_time" value="true"/>
+    </node>
+
+    <!-- Percepcion (color/forma - pose 3D con camera_info + TF2) -->
+    <node pkg="robx7_vision" exec="object_detector" name="object_detector" output="screen">
+        <param name="use_sim_time" value="true"/>
+        <param name="classify_by" value="$(var classify_by)"/>
+        <param name="fallback_hfov" value="$(var fallback_hfov)"/>
     </node>
 
     <node pkg="rviz2" exec="rviz2" name="rviz" args="-d $(var rviz_config_path)" output="screen">
         <param name="use_sim_time" value="true"/>
     </node>
-
-
-
 </launch>

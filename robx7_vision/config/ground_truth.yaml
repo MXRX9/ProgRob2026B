@@ -1,0 +1,5 @@
+# Posiciones REALES de los objetos (centro) segun robx7_cell.sdf, marco 'world' [m].
+objects:
+  - {color: red,   shape: cube,     x: 0.66, y: 0.08}
+  - {color: green, shape: cylinder, x: 0.74, y: -0.07}
+  - {color: blue,  shape: cube,     x: 0.64, y: -0.14}

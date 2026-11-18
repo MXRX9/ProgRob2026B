@@ -1,3 +1,6 @@
+import os
+from glob import glob
+
 from setuptools import find_packages, setup
 
 package_name = 'robx7_vision'
@@ -10,6 +13,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -25,6 +29,7 @@ setup(
     entry_points={
         'console_scripts': [
             'camera_viewer = robx7_vision.camera_viewer:main',
+            'object_detector = robx7_vision.object_detector:main',
         ],
     },
 )

@@ -3,15 +3,21 @@
 <package format="3">
   <name>robx7_vision</name>
   <version>0.0.0</version>
-  <description>description</description>
+  <description>Nodos de percepcion del robx7 (Unidad 6): camara, vision clasica e IA</description>
   <maintainer email="angelignacio7991@gmail.com">angel</maintainer>
   <license>TODO: License declaration</license>
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>tf2_ros_py</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>robx7_interfaces</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
