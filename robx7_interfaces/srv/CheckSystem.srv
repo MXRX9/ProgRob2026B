@@ -1,0 +1,7 @@
+# Servicio CheckSystem
+# Petición vacía: el cliente solo pregunta si el sistema es seguro para operar.
+---
+bool seguro             # true si temperatura <= umbral y motores listos
+int64 temperatura       # última temperatura conocida
+bool motores_listos     # último estado conocido de los motores
+string mensaje          # explicación legible para el operador

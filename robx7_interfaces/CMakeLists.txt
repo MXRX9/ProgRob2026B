@@ -14,6 +14,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/HardwareStatus.msg"
 "msg/CustomString.msg"
 "srv/SumarDosFlotantes.srv"
+"srv/CheckSystem.srv"
 "msg/DetectedObject.msg"
 "msg/DetectedObjectArray.msg"
 DEPENDENCIES geometry_msgs std_msgs
