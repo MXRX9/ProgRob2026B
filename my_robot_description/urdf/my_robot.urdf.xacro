@@ -1,0 +1,139 @@
+<?xml version="1.0"?>
+<!-- Brazo robótico de 4 articulaciones + efector final.
+     Autor: Marco Antonio Ramos Sesma  |  Actividad 4 Programación robótica  -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="my_robot">
+
+  <!-- ============ 1. CONSTANTES (si cambias una, cambia todo el robot) ============ -->
+  <xacro:property name="base_x" value="0.20"/>    <!-- largo de la base (m) -->
+  <xacro:property name="base_y" value="0.20"/>    <!-- ancho de la base (m) -->
+  <xacro:property name="base_z" value="0.05"/>    <!-- alto de la base (m) -->
+  <xacro:property name="base_mass" value="5.0"/>  <!-- masa de la base (kg): pesada = estable -->
+  <xacro:property name="arm_radius" value="0.03"/>
+  <xacro:property name="L1" value="0.20"/>        <!-- longitud link_1 -->
+  <xacro:property name="L2" value="0.25"/>        <!-- longitud link_2 -->
+  <xacro:property name="L3" value="0.20"/>        <!-- longitud link_3 -->
+  <xacro:property name="L4" value="0.05"/>        <!-- longitud link_4 (muñeca) -->
+  <xacro:property name="PI" value="3.14159265359"/>
+
+  <!-- ============ 2. MATERIALES (colores RGBA) ============ -->
+  <material name="gris"><color rgba="0.5 0.5 0.5 1.0"/></material>
+  <material name="azul"><color rgba="0.1 0.3 0.8 1.0"/></material>
+  <material name="naranja"><color rgba="0.95 0.55 0.1 1.0"/></material>
+  <material name="verde"><color rgba="0.2 0.7 0.3 1.0"/></material>
+
+  <!-- ============ 3. MACROS DE INERCIA ============ -->
+  <!-- Inercia de una caja sólida. xyz = posición del centro de masa en el marco del link -->
+  <xacro:macro name="box_inertia" params="m x y z xyz:='0 0 0'">
+    <inertial>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <mass value="${m}"/>
+      <inertia ixx="${m*(y*y+z*z)/12.0}" ixy="0" ixz="0"
+               iyy="${m*(x*x+z*z)/12.0}" iyz="0"
+               izz="${m*(x*x+y*y)/12.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Inercia de un cilindro sólido con eje en Z -->
+  <xacro:macro name="cylinder_inertia" params="m r h xyz:='0 0 0'">
+    <inertial>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <mass value="${m}"/>
+      <inertia ixx="${m*(3*r*r+h*h)/12.0}" ixy="0" ixz="0"
+               iyy="${m*(3*r*r+h*h)/12.0}" iyz="0"
+               izz="${m*r*r/2.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ============ 4. MACRO DE ESLABÓN CILÍNDRICO ============ -->
+  <!-- Un link cuyo origen está en su base y crece hacia +Z -->
+  <xacro:macro name="arm_link" params="name length radius mass color">
+    <link name="${name}">
+      <visual>
+        <origin xyz="0 0 ${length/2}" rpy="0 0 0"/>
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${length/2}" rpy="0 0 0"/>
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+      </collision>
+      <xacro:cylinder_inertia m="${mass}" r="${radius}" h="${length}" xyz="0 0 ${length/2}"/>
+    </link>
+  </xacro:macro>
+
+  <!-- ============ 5. MACRO DE ARTICULACIÓN DE REVOLUCIÓN ============ -->
+  <!-- damping/friction evitan que el brazo se desplome por gravedad en Gazebo -->
+  <xacro:macro name="rev_joint" params="name parent child xyz axis lower upper">
+    <joint name="${name}" type="revolute">
+      <parent link="${parent}"/>
+      <child link="${child}"/>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <axis xyz="${axis}"/>
+      <limit lower="${lower}" upper="${upper}" effort="10.0" velocity="2.0"/>
+      <dynamics damping="0.5" friction="0.5"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ============ 6. LINKS ============ -->
+
+  <!-- Base: caja apoyada en el suelo (su marco está en la cara inferior) -->
+  <link name="link_base">
+    <visual>
+      <origin xyz="0 0 ${base_z/2}" rpy="0 0 0"/>
+      <geometry><box size="${base_x} ${base_y} ${base_z}"/></geometry>
+      <material name="gris"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${base_z/2}" rpy="0 0 0"/>
+      <geometry><box size="${base_x} ${base_y} ${base_z}"/></geometry>
+    </collision>
+    <xacro:box_inertia m="${base_mass}" x="${base_x}" y="${base_y}" z="${base_z}" xyz="0 0 ${base_z/2}"/>
+  </link>
+
+  <xacro:arm_link name="link_1" length="${L1}" radius="${arm_radius}" mass="1.0" color="azul"/>
+  <xacro:arm_link name="link_2" length="${L2}" radius="${arm_radius}" mass="0.8" color="naranja"/>
+  <xacro:arm_link name="link_3" length="${L3}" radius="${arm_radius}" mass="0.6" color="azul"/>
+  <xacro:arm_link name="link_4" length="${L4}" radius="0.025" mass="0.2" color="naranja"/>
+
+  <!-- Efector final: pinza simplificada (una caja). Reemplázala por el gripper del repositorio si quieres -->
+  <link name="link_final">
+    <visual>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+      <geometry><box size="0.08 0.04 0.03"/></geometry>
+      <material name="verde"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+      <geometry><box size="0.08 0.04 0.03"/></geometry>
+    </collision>
+    <xacro:box_inertia m="0.15" x="0.08" y="0.04" z="0.03" xyz="0 0 0.015"/>
+  </link>
+
+  <!-- ============ 7. JOINTS ============ -->
+  <!-- joint_1: gira sobre Z (cintura) -->
+  <xacro:rev_joint name="joint_1" parent="link_base" child="link_1"
+                   xyz="0 0 ${base_z}" axis="0 0 1" lower="${-PI}" upper="${PI}"/>
+  <!-- joint_2: gira sobre Y (hombro) -->
+  <xacro:rev_joint name="joint_2" parent="link_1" child="link_2"
+                   xyz="0 0 ${L1}" axis="0 1 0" lower="${-PI/2}" upper="${PI/2}"/>
+  <!-- joint_3: gira sobre Y (codo) -->
+  <xacro:rev_joint name="joint_3" parent="link_2" child="link_3"
+                   xyz="0 0 ${L2}" axis="0 1 0" lower="${-2.0}" upper="${2.0}"/>
+
+  <!-- joint_4: CONTINUA (sin límites), gira sobre Z (rotación de muñeca) -->
+  <joint name="joint_4" type="continuous">
+    <parent link="link_3"/>
+    <child link="link_4"/>
+    <origin xyz="0 0 ${L3}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0.5" friction="0.5"/>
+  </joint>
+
+  <!-- joint_ee: FIJA, une la muñeca con el efector final (no se mueve) -->
+  <joint name="joint_ee" type="fixed">
+    <parent link="link_4"/>
+    <child link="link_final"/>
+    <origin xyz="0 0 ${L4}" rpy="0 0 0"/>
+  </joint>
+
+</robot>
